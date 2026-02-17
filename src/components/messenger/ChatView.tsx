@@ -1,0 +1,174 @@
+import { useState } from "react";
+import Icon from "@/components/ui/icon";
+import { Input } from "@/components/ui/input";
+import type { Chat } from "./ChatList";
+
+interface Message {
+  id: string;
+  text: string;
+  time: string;
+  isMine: boolean;
+  type: "text" | "image" | "audio" | "file";
+}
+
+const mockMessages: Message[] = [
+  { id: "1", text: "Привет! Как дела с проектом?", time: "14:20", isMine: false, type: "text" },
+  { id: "2", text: "Всё чисто, работаю через VPN 🛡️", time: "14:22", isMine: true, type: "text" },
+  { id: "3", text: "Отлично. Скинь файлы когда будут готовы", time: "14:25", isMine: false, type: "text" },
+  { id: "4", text: "📎 project_v2_encrypted.zip (4.2 MB)", time: "14:30", isMine: true, type: "file" },
+  { id: "5", text: "Файлы отправлены 🔒", time: "14:32", isMine: true, type: "text" },
+];
+
+interface ChatViewProps {
+  chat: Chat | null;
+}
+
+const ChatView = ({ chat }: ChatViewProps) => {
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState(mockMessages);
+
+  const sendMessage = () => {
+    if (!message.trim()) return;
+    setMessages([
+      ...messages,
+      {
+        id: Date.now().toString(),
+        text: message,
+        time: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
+        isMine: true,
+        type: "text",
+      },
+    ]);
+    setMessage("");
+  };
+
+  if (!chat) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center animate-fade-in">
+          <div className="w-20 h-20 rounded-2xl gradient-gaming flex items-center justify-center mx-auto mb-4 animate-pulse-glow">
+            <Icon name="MessageSquare" size={36} className="text-white" />
+          </div>
+          <h3 className="font-gaming text-lg font-bold gradient-gaming-text mb-2">
+            SHADOWLINK
+          </h3>
+          <p className="text-sm text-muted-foreground max-w-xs">
+            Выбери чат для начала общения.
+            <br />
+            Все сообщения защищены E2E шифрованием.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex flex-col h-full animate-fade-in">
+      <div className="h-16 px-4 flex items-center justify-between border-b border-border glass">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-lg">
+            {chat.avatar}
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold">{chat.name}</h3>
+            <div className="flex items-center gap-1.5">
+              {chat.online && (
+                <div className="w-2 h-2 rounded-full bg-neon-green" />
+              )}
+              <span className="text-xs text-muted-foreground">
+                {chat.online ? "в сети" : "был(а) недавно"}
+              </span>
+              {chat.encrypted && (
+                <>
+                  <span className="text-xs text-muted-foreground">•</span>
+                  <Icon name="Lock" size={11} className="text-neon-green" />
+                  <span className="text-xs text-neon-green">E2E</span>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-1">
+          <button className="w-9 h-9 rounded-lg hover:bg-secondary flex items-center justify-center transition-colors">
+            <Icon name="Phone" size={18} className="text-muted-foreground" />
+          </button>
+          <button className="w-9 h-9 rounded-lg hover:bg-secondary flex items-center justify-center transition-colors">
+            <Icon name="Video" size={18} className="text-muted-foreground" />
+          </button>
+          <button className="w-9 h-9 rounded-lg hover:bg-secondary flex items-center justify-center transition-colors">
+            <Icon name="Search" size={18} className="text-muted-foreground" />
+          </button>
+          <button className="w-9 h-9 rounded-lg hover:bg-secondary flex items-center justify-center transition-colors">
+            <Icon name="MoreVertical" size={18} className="text-muted-foreground" />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto scrollbar-gaming p-4 space-y-3">
+        <div className="flex justify-center">
+          <div className="px-3 py-1 rounded-full bg-secondary/50 text-xs text-muted-foreground flex items-center gap-1.5">
+            <Icon name="Lock" size={12} className="text-neon-green" />
+            Сквозное шифрование включено
+          </div>
+        </div>
+        {messages.map((msg, i) => (
+          <div
+            key={msg.id}
+            className={`flex ${msg.isMine ? "justify-end" : "justify-start"} animate-fade-in`}
+            style={{ animationDelay: `${i * 30}ms` }}
+          >
+            <div
+              className={`max-w-[75%] px-4 py-2.5 rounded-2xl ${
+                msg.isMine
+                  ? "bg-primary/20 neon-border rounded-br-sm"
+                  : "bg-secondary rounded-bl-sm"
+              } ${msg.type === "file" ? "neon-border-cyan" : ""}`}
+            >
+              {msg.type === "file" && (
+                <div className="flex items-center gap-2 mb-1">
+                  <Icon name="FileArchive" size={16} className="text-neon-cyan" />
+                </div>
+              )}
+              <p className="text-sm leading-relaxed">{msg.text}</p>
+              <div className={`flex items-center gap-1 mt-1 ${msg.isMine ? "justify-end" : ""}`}>
+                <span className="text-[10px] text-muted-foreground">{msg.time}</span>
+                {msg.isMine && (
+                  <Icon name="CheckCheck" size={14} className="text-neon-cyan" />
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="p-4 border-t border-border glass">
+        <div className="flex items-center gap-2">
+          <button className="w-9 h-9 rounded-lg hover:bg-secondary flex items-center justify-center transition-colors shrink-0">
+            <Icon name="Paperclip" size={18} className="text-muted-foreground" />
+          </button>
+          <button className="w-9 h-9 rounded-lg hover:bg-secondary flex items-center justify-center transition-colors shrink-0">
+            <Icon name="Image" size={18} className="text-muted-foreground" />
+          </button>
+          <Input
+            placeholder="Сообщение..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+            className="flex-1 bg-secondary/50 border-border/50 h-10 text-sm focus:ring-primary/30"
+          />
+          <button className="w-9 h-9 rounded-lg hover:bg-secondary flex items-center justify-center transition-colors shrink-0">
+            <Icon name="Mic" size={18} className="text-muted-foreground" />
+          </button>
+          <button
+            onClick={sendMessage}
+            className="w-9 h-9 rounded-lg bg-primary hover:bg-primary/80 flex items-center justify-center transition-colors shrink-0 glow-purple"
+          >
+            <Icon name="Send" size={16} className="text-primary-foreground" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ChatView;
