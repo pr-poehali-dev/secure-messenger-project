@@ -11,27 +11,33 @@ interface Chat {
   avatar: string;
   online: boolean;
   encrypted: boolean;
+  type?: "personal" | "group" | "channel";
 }
 
 const mockChats: Chat[] = [
-  { id: "1", name: "Кибер Волк", lastMessage: "Файлы отправлены 🔒", time: "14:32", unread: 3, avatar: "🐺", online: true, encrypted: true },
-  { id: "2", name: "Тёмный Феникс", lastMessage: "Подключай VPN и заходи", time: "13:15", unread: 0, avatar: "🔥", online: true, encrypted: true },
-  { id: "3", name: "Группа: Альянс", lastMessage: "Призрак: Всем привет!", time: "12:40", unread: 12, avatar: "⚔️", online: false, encrypted: true },
-  { id: "4", name: "Нео Страйк", lastMessage: "Аудио сообщение", time: "вчера", unread: 0, avatar: "⚡", online: false, encrypted: true },
-  { id: "5", name: "Ледяная Тень", lastMessage: "Фото", time: "вчера", unread: 1, avatar: "❄️", online: false, encrypted: true },
-  { id: "6", name: "Канал: Новости", lastMessage: "Обновление безопасности v2.1", time: "пн", unread: 5, avatar: "📢", online: false, encrypted: false },
+  { id: "1", name: "Кибер Волк", lastMessage: "Файлы отправлены 🔒", time: "14:32", unread: 3, avatar: "🐺", online: true, encrypted: true, type: "personal" },
+  { id: "2", name: "Тёмный Феникс", lastMessage: "Подключай VPN и заходи", time: "13:15", unread: 0, avatar: "🔥", online: true, encrypted: true, type: "personal" },
+  { id: "3", name: "Группа: Альянс", lastMessage: "Призрак: Всем привет!", time: "12:40", unread: 12, avatar: "⚔️", online: false, encrypted: true, type: "group" },
+  { id: "4", name: "Нео Страйк", lastMessage: "Аудио сообщение", time: "вчера", unread: 0, avatar: "⚡", online: false, encrypted: true, type: "personal" },
+  { id: "5", name: "Ледяная Тень", lastMessage: "📷 Фото", time: "вчера", unread: 1, avatar: "❄️", online: false, encrypted: true, type: "personal" },
+  { id: "6", name: "Канал: Новости", lastMessage: "Обновление безопасности v2.1", time: "пн", unread: 5, avatar: "📢", online: false, encrypted: false, type: "channel" },
 ];
 
 interface ChatListProps {
   onSelectChat: (chat: Chat) => void;
   selectedChatId: string | null;
+  onCreateGroup: () => void;
 }
 
-const ChatList = ({ onSelectChat, selectedChatId }: ChatListProps) => {
+const ChatList = ({ onSelectChat, selectedChatId, onCreateGroup }: ChatListProps) => {
   const [search, setSearch] = useState("");
-  const filtered = mockChats.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const [filter, setFilter] = useState<"all" | "personal" | "group" | "channel">("all");
+
+  const filtered = mockChats.filter((c) => {
+    const matchSearch = c.name.toLowerCase().includes(search.toLowerCase());
+    const matchFilter = filter === "all" || c.type === filter;
+    return matchSearch && matchFilter;
+  });
 
   return (
     <div className="w-full lg:w-80 h-full border-r border-border flex flex-col">
@@ -40,9 +46,18 @@ const ChatList = ({ onSelectChat, selectedChatId }: ChatListProps) => {
           <h2 className="font-gaming text-sm font-semibold tracking-wider text-foreground">
             СООБЩЕНИЯ
           </h2>
-          <button className="w-8 h-8 rounded-lg bg-primary/15 hover:bg-primary/25 flex items-center justify-center transition-colors">
-            <Icon name="PenSquare" size={16} className="text-primary" />
-          </button>
+          <div className="flex gap-1">
+            <button
+              onClick={onCreateGroup}
+              className="w-8 h-8 rounded-lg bg-neon-cyan/15 hover:bg-neon-cyan/25 flex items-center justify-center transition-colors"
+              title="Создать группу / канал"
+            >
+              <Icon name="Plus" size={16} className="text-neon-cyan" />
+            </button>
+            <button className="w-8 h-8 rounded-lg bg-primary/15 hover:bg-primary/25 flex items-center justify-center transition-colors">
+              <Icon name="PenSquare" size={16} className="text-primary" />
+            </button>
+          </div>
         </div>
         <div className="relative">
           <Icon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -52,6 +67,26 @@ const ChatList = ({ onSelectChat, selectedChatId }: ChatListProps) => {
             onChange={(e) => setSearch(e.target.value)}
             className="pl-9 bg-secondary/50 border-border/50 h-9 text-sm focus:ring-primary/30"
           />
+        </div>
+        <div className="flex gap-1">
+          {([
+            { key: "all", label: "Все" },
+            { key: "personal", label: "Личные" },
+            { key: "group", label: "Группы" },
+            { key: "channel", label: "Каналы" },
+          ] as const).map((f) => (
+            <button
+              key={f.key}
+              onClick={() => setFilter(f.key)}
+              className={`flex-1 py-1.5 rounded-lg text-[11px] font-medium transition-all ${
+                filter === f.key
+                  ? "bg-primary/15 text-primary"
+                  : "text-muted-foreground hover:bg-secondary/50"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -73,6 +108,16 @@ const ChatList = ({ onSelectChat, selectedChatId }: ChatListProps) => {
               </div>
               {chat.online && (
                 <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-neon-green rounded-full border-2 border-background" />
+              )}
+              {chat.type === "group" && (
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-neon-cyan rounded-full border-2 border-background flex items-center justify-center">
+                  <Icon name="Users" size={8} className="text-white" />
+                </div>
+              )}
+              {chat.type === "channel" && (
+                <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-neon-purple rounded-full border-2 border-background flex items-center justify-center">
+                  <Icon name="Megaphone" size={8} className="text-white" />
+                </div>
               )}
             </div>
             <div className="flex-1 min-w-0 text-left">
